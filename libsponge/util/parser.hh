@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <string>
 #include <utility>
+#include <array>
 
 //! The result of parsing or unparsing an IP datagram, TCP segment, Ethernet frame, or ARP message
 enum class ParseResult {
