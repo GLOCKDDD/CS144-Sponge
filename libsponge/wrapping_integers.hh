@@ -34,7 +34,6 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn);
 //! and the other stream runs from the remote TCPSender to the local TCPReceiver and
 //! has a different ISN.
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint);
-
 //! \name Helper functions
 //!@{
 
