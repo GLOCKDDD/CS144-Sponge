@@ -17,7 +17,7 @@
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
-    std::map<size_t,std::string> buffer;
+    std::map<size_t,std::string> _buffer;
     size_t _eof_index; // 初始化为极大值
     size_t _unassembled_bytes; // 单独维护未组装字节数
     ByteStream _output;  //!< The reassembled in-order byte stream
