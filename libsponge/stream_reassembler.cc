@@ -98,7 +98,7 @@ void StreamReassembler::push_substring(const std::string &data, const size_t ind
         const auto &head = _buffer.begin();
         
         // 写入 ByteStream
-        size_t written = _output.write(head->second);
+        _output.write(head->second);
         
         // 这里的逻辑稍微需要注意：
         // ByteStream 也有容量限制，可能写不完（虽然 Lab0 应该不会）

@@ -26,7 +26,7 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn)
 //! runs from the local TCPSender to the remote TCPReceiver and has one ISN,
 //! and the other stream runs from the remote TCPSender to the local TCPReceiver and
 //! has a different ISN.
-inline uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
+uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     // 修正 2: 正确计算 offset (确保是 uint32_t，避免符号扩展)
     // 这里利用 uint32_t 的自然溢出计算 n 到 isn 的距离
     uint32_t offset = n.raw_value() - isn.raw_value();
