@@ -37,6 +37,7 @@ class TCPReceiver {
     //!
     //! This is the beginning of the receiver's window, or in other words, the sequence number
     //! of the first byte in the stream that the receiver hasn't received.
+    //！返回绝对序列号的期待的索引（下一个索引号），意味着之前的数据已经连续的确认
     std::optional<WrappingInt32> ackno() const;
 
     //! \brief The window size that should be sent to the peer

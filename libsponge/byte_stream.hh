@@ -58,6 +58,7 @@ class ByteStream {
 
     //! Read (i.e., copy and then pop) the next "len" bytes of the stream
     //! \returns a string
+    //! \note 长度取stream长度和len的最小值 
     std::string read(const size_t len);
 
     //! \returns `true` if the stream input has ended

@@ -17,6 +17,28 @@
 //! segments if the retransmission timer expires.
 class TCPSender {
   private:
+
+    bool _fin_sent{false};
+
+    unsigned int _consecutive_retransmissions_cnt{};
+
+    unsigned int _timeout;
+
+    uint16_t _current_windows_size{};
+
+    //! \brief 有多少byte数据在途中
+    //! \note 要注意数据类型
+    uint64_t _bytes_in_flight{0};
+
+    //计时器
+    size_t _timer{};
+
+    //计时器是否开启
+    bool _timer_is_open{false};
+
+    //在途中的数据报
+    std::queue<TCPSegment> _segments_in_flight{};
+
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
 
@@ -54,6 +76,8 @@ class TCPSender {
     void send_empty_segment();
 
     //! \brief create and send segments to fill as much of the window as possible
+    //! 满足了流量控制，发送syn报文直到fin报文的功能
+    //! 具体实现流量控制机制，确保发送速率不超过接收方处理能力。
     void fill_window();
 
     //! \brief Notifies the TCPSender of the passage of time

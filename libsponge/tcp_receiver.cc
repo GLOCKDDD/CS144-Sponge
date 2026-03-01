@@ -20,8 +20,8 @@ void TCPReceiver::segment_received(const TCPSegment &seg)
     else
     {
         uint64_t checkpoint = _reassembler.stream_out().bytes_written() + 1;
-        uint64_t abseqno = unwrap(header.seqno,*_isn,checkpoint);
-        uint64_t stream_idx = abseqno - 1 + (header.syn?1:0);//需要考虑syn的情况，防止下溢
+        uint64_t abseqno = unwrap(header.seqno,*_isn,checkpoint);//绝对序列值
+        uint64_t stream_idx = abseqno - 1 + (header.syn?1:0);//reassembler中payload的索引，需要考虑syn的情况，防止下溢
         _reassembler.push_substring(seg.payload().copy(),stream_idx,header.fin);//写入
     }
     
