@@ -70,7 +70,7 @@ void TCPConnection::segment_received(const TCPSegment &seg)
     _sender.fill_window();
 
     //判断是否需要发送纯ack报文段
-    if(_sender.segments_out().empty()&&_receiver.ackno().has_value())
+    if(_sender.segments_out().empty()&&_receiver.ackno().has_value()&&seg.length_in_sequence_space())
     {
         _sender.send_empty_segment();
     }
@@ -91,7 +91,6 @@ bool TCPConnection::active() const
     if(_rst_received) return false;
     //连接的正常关闭：接收和发送完全，并不延迟
     else if(_receiver.stream_out().input_ended()//收到fin报文段
-    &&_receiver.stream_out().input_ended()//应用层读取完毕
     &&_sender.stream_in().eof()//应用层停止输入并读完
     &&_sender.bytes_in_flight() == 0
     &&!_linger_after_streams_finish

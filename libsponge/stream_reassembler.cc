@@ -32,8 +32,8 @@ void StreamReassembler::push_substring(const std::string &data, const size_t ind
     size_t new_idx = index;
     std::string new_data = data;
 
-    // --- 3. 剪裁 (Trimming) ---
-    // 3.1 左边：切掉旧数据
+    //剪裁
+    //左边：切掉旧数据
     if (new_idx < expect) {
         if (new_idx + new_data.size() <= expect) {
             new_data = ""; // 全部是旧的
