@@ -75,14 +75,18 @@ void TCPSender::fill_window()
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) 
 {
+    //更新接收窗口，重传，在途
+
     uint64_t abs_ackno = unwrap(ackno,_isn,_next_seqno);
 
     if(abs_ackno > _next_seqno) return;
 
+    //更新接收窗口
     _current_windows_size = window_size;
 
     bool has_seg_acked = false;
 
+    //更新在途队列
     while(!_segments_in_flight.empty())
     {
         const TCPSegment& seg = _segments_in_flight.front();
@@ -99,6 +103,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 
     }
 
+    //重置定时器，cnt，重传时间
     if (has_seg_acked) {
         _consecutive_retransmissions_cnt = 0;
 
@@ -118,6 +123,8 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) 
 {
+    //更新计时器，判断是否重传，翻倍重传时间
+
     if(!_timer_is_open) return;
 
     _timer += ms_since_last_tick;

@@ -18,15 +18,16 @@ StreamReassembler::StreamReassembler(const size_t capacity) : _buffer(),_eof_ind
 // 对于下一个期望接收字符的索引应该调用bytes_written()函数
 void StreamReassembler::push_substring(const std::string &data, const size_t index, const bool eof) 
 {
-    // --- 1. 记录 EOF ---
-    if (eof) {
+    //记录 EOF索引
+    if (eof) 
+    {
         _eof_index = index + data.size();
     }
 
     // --- 2. 准备数据 ---
     size_t first_unread = _output.bytes_read();
     size_t capacity_limit = first_unread + _capacity; // 绝对索引限制
-    size_t expect = _output.bytes_written();
+    size_t expect = _output.bytes_written();//期望起始索引
 
     size_t new_idx = index;
     std::string new_data = data;

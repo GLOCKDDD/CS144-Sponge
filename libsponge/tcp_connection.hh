@@ -13,6 +13,10 @@ class TCPConnection {
     TCPReceiver _receiver{_cfg.recv_capacity};
     TCPSender _sender{_cfg.send_capacity, _cfg.rt_timeout, _cfg.fixed_isn};
 
+    size_t _last_segment_received_time{};
+
+    bool _rst_received{};
+
     //! outbound queue of segments that the TCPConnection wants sent
     std::queue<TCPSegment> _segments_out{};
 
@@ -20,6 +24,12 @@ class TCPConnection {
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
+
+    //将sender中的报文段添加windowsize和ackno，然后转移到connection中
+    void send_sender_segments();
+
+    //! \brief 构造rst报文段
+    void send_rst();
 
   public:
     //! \name "Input" interface for the writer
