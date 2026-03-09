@@ -31,14 +31,15 @@ void TCPSender::fill_window()
     size_t window_limit = _current_windows_size == 0 ? 1 : _current_windows_size;
 
     //当途中没有数据且window_limit == 1时触发零探测
-    while(window_limit > _bytes_in_flight&&!_fin_sent)
+    while((window_limit > _bytes_in_flight&&!_fin_sent))
     {
         TCPSegment seg;
 
-        //因为limit最小为一，顺便解决了syn报文段的byte问题
+        //因为limit最小为一，发送syn报文段
         if(_next_seqno == 0) seg.header().syn = true;
 
-        size_t remaining_window = window_limit - _bytes_in_flight - seg.length_in_sequence_space();
+        //减去在途字节和当前报文段的syn标志后剩余的窗口
+        size_t remaining_window = window_limit - _bytes_in_flight - (seg.header().syn?1:0);
 
         //将abs_seq转换成相对seq
         seg.header().seqno = wrap(_next_seqno,_isn);
@@ -52,7 +53,7 @@ void TCPSender::fill_window()
             _fin_sent = true;
         }
 
-        size_t len = seg.length_in_sequence_space();
+        size_t len = (seg.header().syn?1:0) + seg.payload().size() + (seg.header().fin?1:0);
 
         //当没有数据可以发送时结束发送，
         if(!len) break;
@@ -75,6 +76,9 @@ void TCPSender::fill_window()
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) 
 {
+    //大于下一个期望序列的ack会被忽略
+    //如果ack号已经被接收，无影响
+    //处理在途字节并不会将队列的段重组拆分
     //更新接收窗口，重传，在途
 
     uint64_t abs_ackno = unwrap(ackno,_isn,_next_seqno);
@@ -135,7 +139,8 @@ void TCPSender::tick(const size_t ms_since_last_tick)
 
         _timer = 0;
 
-        //零探测并且上一个报文不是syn报文段
+        //零探测时窗口为0不用翻倍时间
+        //重传syn时当前窗口为0，需要翻倍
         if(_current_windows_size == 0 && !_segments_in_flight.front().header().syn) return;
 
         _consecutive_retransmissions_cnt += 1;

@@ -10,6 +10,49 @@
 
 using namespace std;
 
+void TCPConnection::send_rst() 
+{
+    TCPSegment seg;
+
+    seg.header().rst = true;
+
+    //添加ack和绝对序列号，在目前的代码逻辑中没有用
+    seg.header().seqno = _sender.next_seqno();
+    if (_receiver.ackno().has_value()) 
+    {
+        seg.header().ackno = _receiver.ackno().value();
+
+        seg.header().ack = true;
+    }
+
+    //发送rst之前将队列清空
+    while(!_segments_out.empty())
+    {
+        _segments_out.pop();
+    }
+    _segments_out.push(std::move(seg));
+
+    _linger_after_streams_finish = false;//不需要等待，直接关闭
+
+    //转换状态
+    _rst_received = true;
+
+    while(!_sender.stream_in().buffer_empty())
+    {
+        _sender.stream_in().pop_output(_sender.stream_in().buffer_size());
+    }
+    _sender.stream_in().end_input();
+    _sender.stream_in().set_error();
+    while(!_receiver.stream_out().buffer_empty())
+    {
+        _receiver.stream_out().pop_output(_receiver.stream_out().buffer_size());
+    }
+    _receiver.stream_out().end_input();
+    _receiver.stream_out().set_error();
+
+    return;
+}
+
 void TCPConnection::send_sender_segments()
 {
     std::queue<TCPSegment>& q = _sender.segments_out();
@@ -44,19 +87,35 @@ void TCPConnection::segment_received(const TCPSegment &seg)
 {
     _last_segment_received_time = 0;
 
-    //收到强制中断连接的RST报文段
-    if(seg.header().rst)
-    {
+    // 收到强制中断连接的RST报文段
+    if (seg.header().rst) {
         _rst_received = true;
-        //防御性编程，不用延迟关闭
+        // 防御性编程，不用延迟关闭
         _linger_after_streams_finish = false;
 
-        //连接异常，防止还在队列中的数据包发送出去
-        while(!_segments_out.empty())
+        // 连接异常，防止还在队列中的数据包发送出去
+        while (!_segments_out.empty()) 
         {
             _segments_out.pop();
         }
+        while (!_sender.stream_in().buffer_empty()) 
+        {
+            _sender.stream_in().pop_output(_sender.stream_in().buffer_size());
+        }
+        _sender.stream_in().end_input();
+        _sender.stream_in().set_error();
+        while (!_receiver.stream_out().buffer_empty()) 
+        {
+            _receiver.stream_out().pop_output(_receiver.stream_out().buffer_size());
+        }
+        _receiver.stream_out().end_input();
+        _receiver.stream_out().set_error();
         return;
+    }
+
+    if(!_receiver.ackno().has_value())
+    {
+        if(!seg.header().syn) return;
     }
 
     _receiver.segment_received(seg);
@@ -116,36 +175,7 @@ size_t TCPConnection::write(const string &data)
     return result;
 }
 
-void TCPConnection::send_rst() 
-{
-    TCPSegment seg;
 
-    seg.header().rst = true;
-
-    seg.header().seqno = _sender.next_seqno();
-
-    if (_receiver.ackno().has_value()) {
-        seg.header().ackno = _receiver.ackno().value();
-
-        seg.header().ack = true;
-    }
-
-    _segments_out.push(std::move(seg));
-
-    _linger_after_streams_finish = false;//不需要等待，直接关闭
-
-    //转换状态
-    _rst_received = true;
-
-    //清理队列
-    while(!_segments_out.empty())
-    {
-        _segments_out.pop();
-    }
-
-
-    return;
-}
 
 //! \param[in] ms_since_last_tick number of milliseconds since the last call to this method
 void TCPConnection::tick(const size_t ms_since_last_tick) 
@@ -155,6 +185,8 @@ void TCPConnection::tick(const size_t ms_since_last_tick)
     
     //判断是否重发
     _sender.tick(ms_since_last_tick);
+    //将重发报文段放入队列
+    send_sender_segments();
 
     //重传次数过多，发送rst报文
     if(_sender.consecutive_retransmissions() > TCPConfig::MAX_RETX_ATTEMPTS)

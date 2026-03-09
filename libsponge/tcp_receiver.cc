@@ -19,8 +19,10 @@ void TCPReceiver::segment_received(const TCPSegment &seg)
     if(!_isn.has_value()) return;
     else
     {
+        //使用下一个期望接收到的绝对序列号作为checkpoint
         uint64_t checkpoint = _reassembler.stream_out().bytes_written() + 1;
         uint64_t abseqno = unwrap(header.seqno,*_isn,checkpoint);//绝对序列值
+        if(!abseqno&&!header.syn) return;//对异常情况的特殊处理
         uint64_t stream_idx = abseqno - 1 + (header.syn?1:0);//reassembler中payload的索引，需要考虑syn的情况，防止下溢
         _reassembler.push_substring(seg.payload().copy(),stream_idx,header.fin);//写入
     }
