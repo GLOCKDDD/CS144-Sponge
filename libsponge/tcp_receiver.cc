@@ -5,7 +5,7 @@
 // For Lab 2, please replace with a real implementation that passes the
 // automated checks run by `make check_lab2`.
 
-
+//同步序列号，将报文段放入重组流中
 void TCPReceiver::segment_received(const TCPSegment &seg) 
 {
     const TCPHeader& header = seg.header();
@@ -17,12 +17,12 @@ void TCPReceiver::segment_received(const TCPSegment &seg)
     }
     //还未接收过syn，丢弃
     if(!_isn.has_value()) return;
-    else
+    else 
     {
         //使用下一个期望接收到的绝对序列号作为checkpoint
         uint64_t checkpoint = _reassembler.stream_out().bytes_written() + 1;
         uint64_t abseqno = unwrap(header.seqno,*_isn,checkpoint);//绝对序列值
-        if(!abseqno&&!header.syn) return;//对异常情况的特殊处理
+        if(!abseqno&&!header.syn) return;//序列号为0但没有syn标志
         uint64_t stream_idx = abseqno - 1 + (header.syn?1:0);//reassembler中payload的索引，需要考虑syn的情况，防止下溢
         _reassembler.push_substring(seg.payload().copy(),stream_idx,header.fin);//写入
     }

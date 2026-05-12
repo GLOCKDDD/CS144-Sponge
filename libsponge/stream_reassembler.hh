@@ -17,8 +17,9 @@
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
+    //存储未排序的信息，里面的数据不重叠，键为起始下标
     std::map<size_t,std::string> _buffer;
-    size_t _eof_index; // 初始化为极大值
+    size_t _eof_index; // 最后一个字节数据的下一个索引，初始化为极大值
     size_t _unassembled_bytes; // 单独维护未组装字节数
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes

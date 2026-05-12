@@ -24,26 +24,25 @@ void StreamReassembler::push_substring(const std::string &data, const size_t ind
         _eof_index = index + data.size();
     }
 
-    // --- 2. 准备数据 ---
     size_t first_unread = _output.bytes_read();
-    size_t capacity_limit = first_unread + _capacity; // 绝对索引限制
+    size_t capacity_limit = first_unread + _capacity; // 绝对索引限制，不能大于等于这个索引
     size_t expect = _output.bytes_written();//期望起始索引
 
     size_t new_idx = index;
     std::string new_data = data;
 
-    //剪裁
+    //剪裁数据，将数据裁剪为左端大于等于expect，右端小于capacity的数据
     //左边：切掉旧数据
     if (new_idx < expect) {
         if (new_idx + new_data.size() <= expect) {
             new_data = ""; // 全部是旧的
         } else {
-            new_data = new_data.substr(expect - new_idx);
+            new_data = new_data.substr(expect - new_idx);//剩下的全是新数据
             new_idx = expect;
         }
     }
 
-    // 3.2 右边：切掉超出 Capacity 的数据
+    //右边：切掉超出 Capacity 的数据
     if (new_idx + new_data.size() > capacity_limit) {
         if (new_idx >= capacity_limit) {
             new_data = ""; // 全部超出
@@ -52,7 +51,7 @@ void StreamReassembler::push_substring(const std::string &data, const size_t ind
         }
     }
 
-    // --- 4. 合并与存储 (仅当数据非空时执行) ---
+    //合并与存储，维护_buffer，将新的数据放入缓冲，重叠的数据相互合并
     if (!new_data.empty()) {
         
         // 4.1 查找重叠起点
@@ -93,7 +92,7 @@ void StreamReassembler::push_substring(const std::string &data, const size_t ind
         _unassembled_bytes += new_data.size();
     }
 
-    // --- 5. 写入流 (统一处理) ---
+    // 写入流
     // 只要 map 还有数据，且队头就是我们要的数据
     while (!_buffer.empty() && _buffer.begin()->first == _output.bytes_written()) {
         const auto &head = _buffer.begin();

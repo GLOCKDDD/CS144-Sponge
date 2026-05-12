@@ -20,6 +20,7 @@ class TCPReceiver {
     //! The maximum number of bytes we'll store.
     size_t _capacity;
 
+    //初始序列号，如果未接收syn报文则没有
     std::optional<WrappingInt32> _isn;
 
   public:
