@@ -23,6 +23,7 @@ void TCPReceiver::segment_received(const TCPSegment &seg)
         uint64_t checkpoint = _reassembler.stream_out().bytes_written() + 1;
         uint64_t abseqno = unwrap(header.seqno,*_isn,checkpoint);//绝对序列值
         if(!abseqno&&!header.syn) return;//序列号为0但没有syn标志
+        //syn包或syn+数据包：字节流的起点为0，不需要减一
         uint64_t stream_idx = abseqno - 1 + (header.syn?1:0);//reassembler中payload的索引，需要考虑syn的情况，防止下溢
         _reassembler.push_substring(seg.payload().copy(),stream_idx,header.fin);//写入
     }
@@ -35,6 +36,7 @@ std::optional<WrappingInt32> TCPReceiver::ackno() const
 
     uint64_t abs_ack = 1 + _reassembler.stream_out().bytes_written();
 
+    //如果输入结束（接受到fin),需要再加一表示接受到fin报文段
     if (_reassembler.stream_out().input_ended()) //fin
     {
         abs_ack += 1;
@@ -46,5 +48,6 @@ std::optional<WrappingInt32> TCPReceiver::ackno() const
 
 size_t TCPReceiver::window_size() const 
 { 
+    //按照函数要求，只减去已经重组的字节
     return _capacity - _reassembler.stream_out().buffer_size(); 
 }
